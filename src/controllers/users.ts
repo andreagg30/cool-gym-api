@@ -98,7 +98,17 @@ async function login(req: Request, res: Response) {
 async function signUp(req: Request, res: Response) {
   const client = await pool.connect();
 
-  const { first_name, last_name, email, phone, password } = req.body;
+  const {
+    first_name,
+    last_name,
+    email,
+    phone,
+    password,
+    birth_date,
+    curp,
+    gender,
+    accepts_communications,
+  } = req.body;
 
   try {
     await client.query("BEGIN");
@@ -122,6 +132,10 @@ async function signUp(req: Request, res: Response) {
       phone,
       password: passwordHash,
       user_type_id: 2, // user_type_id for regular users
+      birth_date,
+      curp,
+      gender,
+      accepts_communications,
       client,
     });
 

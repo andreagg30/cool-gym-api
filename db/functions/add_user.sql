@@ -1,10 +1,13 @@
-
 CREATE OR REPLACE FUNCTION add_user(
     p_first_name VARCHAR,
     p_last_name VARCHAR,
     p_email VARCHAR,
     p_phone VARCHAR,
     p_password_hash TEXT,
+    p_birth_date DATE,
+    p_curp CHAR(18),
+    p_gender VARCHAR,
+    p_accepts_communications BOOLEAN,
     p_user_type_id INTEGER
 )
 RETURNS UUID
@@ -19,6 +22,10 @@ BEGIN
         email,
         phone,
         password_hash,
+        birth_date,
+        curp,
+        gender,
+        accepts_communications,
         user_type_id
     )
     VALUES (
@@ -27,6 +34,10 @@ BEGIN
         LOWER(TRIM(p_email)),
         p_phone,
         p_password_hash,
+        p_birth_date,
+        UPPER(TRIM(p_curp)),
+        p_gender,
+        COALESCE(p_accepts_communications, FALSE),
         p_user_type_id
     )
     RETURNING id INTO v_user_id;

@@ -1,5 +1,28 @@
 import { body } from "express-validator";
 
+const curpPattern = /^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9]\d$/;
+
+function hasValidCurpDate(curp: string) {
+  const year = Number(curp.slice(4, 6));
+  const month = Number(curp.slice(6, 8));
+  const day = Number(curp.slice(8, 10));
+  const century = /\d/.test(curp[16]) ? 1900 : 2000;
+  const date = new Date(Date.UTC(century + year, month - 1, day));
+
+  return date.getUTCFullYear() === century + year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
+}
+
+function hasValidCurpCheckDigit(curp: string) {
+  const dictionary = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+  const sum = curp.slice(0, 17).split("").reduce((total, character, index) => {
+    return total + dictionary.indexOf(character) * (18 - index);
+  }, 0);
+
+  return (10 - (sum % 10)) % 10 === Number(curp[17]);
+}
+
 export const getUserValidator = [
   body("email")
     .trim()
@@ -70,18 +93,51 @@ export const addUserValidator = [
     .withMessage("La contraseña debe incluir al menos una minúscula")
     .matches(/[0-9]/)
     .withMessage("La contraseña debe incluir al menos un número"),
+
+  body("birth_date")
+    .notEmpty()
+    .withMessage("La fecha de nacimiento es obligatoria")
+    .isISO8601({ strict: true })
+    .withMessage("La fecha de nacimiento debe tener formato YYYY-MM-DD")
+    .custom((value: string) => {
+      const birthDate = new Date(`${value}T00:00:00Z`);
+      if (birthDate > new Date()) {
+        throw new Error("La fecha de nacimiento no puede estar en el futuro");
+      }
+      return true;
+    }),
+
+  body("curp")
+    .trim()
+    .toUpperCase()
+    .notEmpty()
+    .withMessage("La CURP es obligatoria")
+    .matches(curpPattern)
+    .withMessage("La CURP no tiene un formato válido")
+    .custom((value: string) => {
+      if (!hasValidCurpDate(value)) {
+        throw new Error("La fecha contenida en la CURP no es válida");
+      }
+      if (!hasValidCurpCheckDigit(value)) {
+        throw new Error("El dígito verificador de la CURP no es válido");
+      }
+      return true;
+    }),
+
+  body("gender")
+    .notEmpty()
+    .withMessage("El género es obligatorio")
+    .isIn(["male", "female", "other"])
+    .withMessage("El género debe ser male, female u other"),
+
+  body("accepts_communications")
+    .optional()
+    .isBoolean()
+    .withMessage("El consentimiento de comunicaciones debe ser booleano")
+    .toBoolean(),
 ];
 
 export const verifyOtpValidator = [
-  body("email")
-    .trim()
-    .notEmpty()
-    .withMessage("Email required")
-    .isEmail()
-    .withMessage("Invalid Email")
-    .isLength({ max: 255 })
-    .withMessage("Email must not be longer than 255")
-    .normalizeEmail(),
   body("otp")
     .trim()
     .notEmpty()
