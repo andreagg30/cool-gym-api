@@ -12,6 +12,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import emailService from "./services/mails.js";
 import passwordRouter from "./routes/passwords.js";
+import stripeRouter from "./routes/stripe.js";
 // Create the Express application
 const app = express();
 const port = 3000;
@@ -47,6 +48,7 @@ app.use("/api/users", userRouter);
 app.use("/api/otp", otpRouter);
 app.use("/api/sessions", sessionRouter);
 app.use("/api/passwords", passwordRouter);
+app.use("/api/stripe", stripeRouter);
 
 // Global error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
